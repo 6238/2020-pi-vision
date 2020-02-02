@@ -64,8 +64,125 @@ cameras = []
 cvSink = None
 outputStream = None
 outputStream2 = None
-outputStream3 = None
-img = None
+# outputStream3 = None
+img = np.zeros(shape=(120, 160, 3), dtype=np.uint8) # first used for bgr, then used for hsv
+
+# blue = None
+# green = None
+# red = None
+
+height = img.shape[0] 
+width = img.shape[1]
+centerX = int(width/2)
+centerY = int(height/2)
+""" 
+cameraSetup = {"brightness": 0,
+            "fps": 30,
+            "height": 120,
+            "name": "rPi Camera 0",
+            "path": "/dev/video0",
+            "pixel format": "mjpeg",
+            "properties": [
+                {
+                    "name": "connect_verbose",
+                    "value": 1
+                },
+                {
+                    "name": "raw_brightness",
+                    "value": 30
+                },
+                {
+                    "name": "brightness",
+                    "value": 0
+                },
+                {
+                    "name": "raw_contrast",
+                    "value": 10
+                },
+                {
+                    "name": "contrast",
+                    "value": 100
+                },
+                {
+                    "name": "raw_saturation",
+                    "value": 200
+                },
+                {
+                    "name": "saturation",
+                    "value": 100
+                },
+                {
+                    "name": "white_balance_temperature_auto",
+                    "value": true
+                },
+                {
+                    "name": "power_line_frequency",
+                    "value": 2
+                },
+                {
+                    "name": "white_balance_temperature",
+                    "value": 2800
+                },
+                {
+                    "name": "raw_sharpness",
+                    "value": 21
+                },
+                {
+                    "name": "sharpness",
+                    "value": 42
+                },
+                {
+                    "name": "backlight_compensation",
+                    "value": 0
+                },
+                {
+                    "name": "exposure_auto",
+                    "value": 1
+                },
+                {
+                    "name": "raw_exposure_absolute",
+                    "value": 10
+                },
+                {
+                    "name": "exposure_absolute",
+                    "value": 15
+                },
+                {
+                    "name": "pan_absolute",
+                    "value": 0
+                },
+                {
+                    "name": "tilt_absolute",
+                    "value": 0
+                },
+                {
+                    "name": "zoom_absolute",
+                    "value": 0
+                }
+            ],
+            "stream": {
+                "properties": []
+            },
+            "white balance": "auto",
+            "width": 160
+        }
+ """
+
+# def resetProperties(camera):
+#     camera["properties"]["raw_brightness"] = 30
+#     camera["properties"]["brightness"] = 0
+#     camera["properties"]["raw_contrast"] = 10
+#     camera["properties"]["contrast"] = 100
+#     camera["properties"]["raw_saturation"] = 200
+#     camera["properties"]["saturation"] = 100
+#     camera["properties"]["raw_sharpness"] = 21
+#     camera["properties"]["sharpness"] = 42
+#     camera["properties"]["exposure_auto"] = 1
+#     camera["properties"]["raw_exposure_absolute"] = 10
+#     camera["properties"]["exposure_absolute"] = 15
+
+#     return camera
+    
 
 def parseError(str):
     """Report parse error."""
@@ -95,27 +212,6 @@ def readCameraConfig(config):
     cam.config = config
 
     cameraConfigs.append(cam)
-    return True
-
-def readSwitchedCameraConfig(config):
-    """Read single switched camera configuration."""
-    cam = CameraConfig()
-
-    # name
-    try:
-        cam.name = config["name"]
-    except KeyError:
-        parseError("could not read switched camera name")
-        return False
-
-    # path
-    try:
-        cam.key = config["key"]
-    except KeyError:
-        parseError("switched camera '{}': could not read key".format(cam.name))
-        return False
-
-    switchedCameraConfigs.append(cam)
     return True
 
 def readConfig():
@@ -160,14 +256,10 @@ def readConfig():
         parseError("could not read cameras")
         return False
     for camera in cameras:
+        # camera = resetProperties(camera)
+        print(camera)
         if not readCameraConfig(camera):
             return False
-
-    # switched cameras
-    if "switched cameras" in j:
-        for camera in j["switched cameras"]:
-            if not readSwitchedCameraConfig(camera):
-                return False
 
     return True
 
@@ -176,8 +268,11 @@ def startCamera(config):
     global cvSink
     global outputStream
     global outputStream2
-    global outputStream3
-    global img
+    # global outputStream3
+
+    # global blue
+    # global green
+    # global red
 
     print("Starting camera '{}' on {}".format(config.name, config.path))
     inst = CameraServer.getInstance()
@@ -194,38 +289,15 @@ def startCamera(config):
     cvSink = inst.getVideo()
 
     # (optional) Setup a CvSource. This will send images back to the Dashboard
-    outputStream = inst.putVideo("image", 160, 120)
-    outputStream2 = inst.putVideo("image2", 160, 120)
-    outputStream3 = inst.putVideo("image3", 160, 120)
+    outputStream = inst.putVideo("image", width, height)
+    outputStream2 = inst.putVideo("image2", width, height)
+    # outputStream3 = inst.putVideo("image3", width, height)
 
-    # Allocating new images is very expensive, always try to preallocate
-    img = np.zeros(shape=(120, 160, 3), dtype=np.uint8)
+    # blue = inst.putVideo("blue", width, height)
+    # green = inst.putVideo("green", width, height)
+    # red = inst.putVideo("red", width, height)
 
     return camera
-
-def startSwitchedCamera(config):
-    """Start running the switched camera."""
-    print("Starting switched camera '{}' on {}".format(config.name, config.key))
-    server = CameraServer.getInstance().addSwitchedCamera(config.name)
-
-    def listener(fromobj, key, value, isNew):
-        if isinstance(value, float):
-            i = int(value)
-            if i >= 0 and i < len(cameras):
-              server.setSource(cameras[i])
-        elif isinstance(value, str):
-            for i in range(len(cameraConfigs)):
-                if value == cameraConfigs[i].name:
-                    server.setSource(cameras[i])
-                    break
-
-    NetworkTablesInstance.getDefault().getEntry(config.key).addListener(
-        listener,
-        ntcore.constants.NT_NOTIFY_IMMEDIATE |
-        ntcore.constants.NT_NOTIFY_NEW |
-        ntcore.constants.NT_NOTIFY_UPDATE)
-
-    return server
 
 if __name__ == "__main__":
     if len(sys.argv) >= 2:
@@ -248,10 +320,6 @@ if __name__ == "__main__":
     for config in cameraConfigs:
         cameras.append(startCamera(config))
 
-    # start switched cameras
-    for config in switchedCameraConfigs:
-        startSwitchedCamera(config)
-
     # loop forever
     while True:
         # time.sleep(10)
@@ -263,31 +331,8 @@ if __name__ == "__main__":
             outputStream.notifyError(cvSink.getError())
             # skip the rest of the current iteration
             continue
-        
-        """ blur = cv.blur(img, (5,5))
 
-        outputStream2.putFrame(blur)
-
-        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-
-        outputStream.putFrame(hsv)
-        print(hsv)
-
-        lower = np.array([50, 100, 100]) # 71, 39, 39
-        upper = np.array([70, 255, 250]) # 99, 100, 98
-
-        mask = cv.inRange(hsv, lower, upper)
-        res = cv.bitwise_and(hsv, hsv, mask=mask)
-
-        # mask = cv.inRange(blur, lower, upper)
-        # res = cv.bitwise_and(blur, blur, mask=mask)
-
-        # (optional) send some image back to the dashboard
-        outputStream3.putFrame(res)
-        
-        # print("running") """
-
-        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)    # Convert BGR frame1 to HSV format so that you can more easily filter on a color
+        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)    # Convert BGR img to HSV format so that you can more easily filter on a color
 
         # define range of blue color in HSV
         lowerGreen = np.array([50,100,100])       #lower_blue = np.array([110,50,50])      experiment with different values
@@ -296,10 +341,33 @@ if __name__ == "__main__":
         # Threshold the HSV image to get only blue colors, based on lower_blue, upper_blue
         mask = cv.inRange(hsv, lowerGreen, upperGreen)
         
-        # Bitwise-AND mask and original image and the blue mask to get a final result that "only" has the blue colors.
+        # Bitwise-AND mask and original image and the blue mask to get a final result that "only" has the green colors.
         res = cv.bitwise_and(img,img, mask= mask)
 
-        outputStream.putFrame(hsv)
+        maskcopy = mask  #make a copy of mask, some documents suggest that the contours function changes the image that is passed.
+        image, contours, hierarchy = cv.findContours(maskcopy,cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)     # Find the contours
+        # cv.drawContours(res, contours, -1, (255,0,0), 2)
+        
+        #Draw Cross Hairs At Center of Frame
+        res = cv.circle(res, (centerX, centerY), 10, (255,0,0), 1)  #  Draw a circle using center and radius of target
+        res = cv.line(res, (centerX-10, centerY),(centerX+10, centerY), (225,0,0), 1)     # Draw a red horizontal line
+        res = cv.line(res, (centerX, centerY-10), (centerX, centerY+10), (225,0,0), 1)
+
+        if len(contours) > 0:  # Avoid processing null contours
+            Obj1 = max(contours, key=cv.contourArea)  #find largest area contour aka green reflective tape
+            (x,y,w,h) = cv.boundingRect(Obj1)     # get geometric information
+
+            res = cv.rectangle(res, (x,y), (x+w, y+h), (0, 0, 255), 2)
+
+        outputStream.putFrame(img)
         outputStream2.putFrame(res)
-        outputStream3.putFrame(img)
+        # outputStream3.putFrame(hsv)
+
+        # b, g, r = cv.split(hsv)
+
+        # blue.putFrame(b)
+        # green.putFrame(g)
+        # red.putFrame(r)
+
+        
         
