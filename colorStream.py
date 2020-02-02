@@ -63,6 +63,8 @@ cameras = []
 
 cvSink = None
 outputStream = None
+outputStream2 = None
+outputStream3 = None
 img = None
 
 def parseError(str):
@@ -173,6 +175,8 @@ def startCamera(config):
     """Start running the camera."""
     global cvSink
     global outputStream
+    global outputStream2
+    global outputStream3
     global img
 
     print("Starting camera '{}' on {}".format(config.name, config.path))
@@ -190,7 +194,9 @@ def startCamera(config):
     cvSink = inst.getVideo()
 
     # (optional) Setup a CvSource. This will send images back to the Dashboard
-    outputStream = inst.putVideo("masked", 160, 120)
+    outputStream = inst.putVideo("image", 160, 120)
+    outputStream2 = inst.putVideo("image2", 160, 120)
+    outputStream3 = inst.putVideo("image3", 160, 120)
 
     # Allocating new images is very expensive, always try to preallocate
     img = np.zeros(shape=(120, 160, 3), dtype=np.uint8)
@@ -258,20 +264,42 @@ if __name__ == "__main__":
             # skip the rest of the current iteration
             continue
         
-        blur = cv.blur(img, (10,10))
-        output = cv.cvtColor(blur, cv.COLOR_BGR2HSV)
+        """ blur = cv.blur(img, (5,5))
 
-        outputStream.putFrame(output)
-        print(output)
+        outputStream2.putFrame(blur)
 
-        lower = np.array([10, 150, 50])
-        upper = np.array([170, 200, 150])
+        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
 
-        mask = cv.inRange(output, lower, upper)
-        res = cv.bitwise_and(output, output, mask=mask)
+        outputStream.putFrame(hsv)
+        print(hsv)
+
+        lower = np.array([50, 100, 100]) # 71, 39, 39
+        upper = np.array([70, 255, 250]) # 99, 100, 98
+
+        mask = cv.inRange(hsv, lower, upper)
+        res = cv.bitwise_and(hsv, hsv, mask=mask)
+
+        # mask = cv.inRange(blur, lower, upper)
+        # res = cv.bitwise_and(blur, blur, mask=mask)
 
         # (optional) send some image back to the dashboard
-        # outputStream.putFrame(res)
+        outputStream3.putFrame(res)
         
-        # print("running")
+        # print("running") """
+
+        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)    # Convert BGR frame1 to HSV format so that you can more easily filter on a color
+
+        # define range of blue color in HSV
+        lowerGreen = np.array([50,100,100])       #lower_blue = np.array([110,50,50])      experiment with different values
+        upperGreen = np.array([70,255,250])    #upper_blue = np.array([130,255,255])    experiment with different values
+        
+        # Threshold the HSV image to get only blue colors, based on lower_blue, upper_blue
+        mask = cv.inRange(hsv, lowerGreen, upperGreen)
+        
+        # Bitwise-AND mask and original image and the blue mask to get a final result that "only" has the blue colors.
+        res = cv.bitwise_and(img,img, mask= mask)
+
+        outputStream.putFrame(hsv)
+        outputStream2.putFrame(res)
+        outputStream3.putFrame(img)
         
