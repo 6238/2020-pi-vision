@@ -168,20 +168,20 @@ cameraSetup = {"brightness": 0,
         }
  """
 
-# def resetProperties(camera):
-#     camera["properties"]["raw_brightness"] = 30
-#     camera["properties"]["brightness"] = 0
-#     camera["properties"]["raw_contrast"] = 10
-#     camera["properties"]["contrast"] = 100
-#     camera["properties"]["raw_saturation"] = 200
-#     camera["properties"]["saturation"] = 100
-#     camera["properties"]["raw_sharpness"] = 21
-#     camera["properties"]["sharpness"] = 42
-#     camera["properties"]["exposure_auto"] = 1
-#     camera["properties"]["raw_exposure_absolute"] = 10
-#     camera["properties"]["exposure_absolute"] = 15
+""" def resetProperties(camera):
+    camera["properties"]["raw_brightness"] = 30
+    camera["properties"]["brightness"] = 0
+    camera["properties"]["raw_contrast"] = 10
+    camera["properties"]["contrast"] = 100
+    camera["properties"]["raw_saturation"] = 200
+    camera["properties"]["saturation"] = 100
+    camera["properties"]["raw_sharpness"] = 21
+    camera["properties"]["sharpness"] = 42
+    camera["properties"]["exposure_auto"] = 1
+    camera["properties"]["raw_exposure_absolute"] = 10
+    camera["properties"]["exposure_absolute"] = 15
 
-#     return camera
+    return camera """
     
 
 def parseError(str):
@@ -256,8 +256,19 @@ def readConfig():
         parseError("could not read cameras")
         return False
     for camera in cameras:
-        # camera = resetProperties(camera)
         print(camera)
+        """ camera['properties']['raw_brightness'] = 30
+        camera['properties']['brightness'] = 0
+        camera['properties']['raw_contrast'] = 10
+        camera['properties']['contrast'] = 100
+        camera['properties']['raw_saturation'] = 200
+        camera['properties']['saturation'] = 100
+        camera['properties']['raw_sharpness'] = 21
+        camera['properties']['sharpness'] = 42
+        camera['properties']['exposure_auto'] = 1
+        camera['properties']['raw_exposure_absolute'] = 10
+        camera['properties']['exposure_absolute'] = 15
+        print(camera) """
         if not readCameraConfig(camera):
             return False
 
