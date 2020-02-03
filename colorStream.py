@@ -64,125 +64,13 @@ cameras = []
 cvSink = None
 outputStream = None
 outputStream2 = None
-# outputStream3 = None
-img = np.zeros(shape=(120, 160, 3), dtype=np.uint8) # first used for bgr, then used for hsv
 
-# blue = None
-# green = None
-# red = None
+img = np.zeros(shape=(120, 160, 3), dtype=np.uint8) # first used for bgr, then used for hsv
 
 height = img.shape[0] 
 width = img.shape[1]
 centerX = int(width/2)
 centerY = int(height/2)
-""" 
-cameraSetup = {"brightness": 0,
-            "fps": 30,
-            "height": 120,
-            "name": "rPi Camera 0",
-            "path": "/dev/video0",
-            "pixel format": "mjpeg",
-            "properties": [
-                {
-                    "name": "connect_verbose",
-                    "value": 1
-                },
-                {
-                    "name": "raw_brightness",
-                    "value": 30
-                },
-                {
-                    "name": "brightness",
-                    "value": 0
-                },
-                {
-                    "name": "raw_contrast",
-                    "value": 10
-                },
-                {
-                    "name": "contrast",
-                    "value": 100
-                },
-                {
-                    "name": "raw_saturation",
-                    "value": 200
-                },
-                {
-                    "name": "saturation",
-                    "value": 100
-                },
-                {
-                    "name": "white_balance_temperature_auto",
-                    "value": true
-                },
-                {
-                    "name": "power_line_frequency",
-                    "value": 2
-                },
-                {
-                    "name": "white_balance_temperature",
-                    "value": 2800
-                },
-                {
-                    "name": "raw_sharpness",
-                    "value": 21
-                },
-                {
-                    "name": "sharpness",
-                    "value": 42
-                },
-                {
-                    "name": "backlight_compensation",
-                    "value": 0
-                },
-                {
-                    "name": "exposure_auto",
-                    "value": 1
-                },
-                {
-                    "name": "raw_exposure_absolute",
-                    "value": 10
-                },
-                {
-                    "name": "exposure_absolute",
-                    "value": 15
-                },
-                {
-                    "name": "pan_absolute",
-                    "value": 0
-                },
-                {
-                    "name": "tilt_absolute",
-                    "value": 0
-                },
-                {
-                    "name": "zoom_absolute",
-                    "value": 0
-                }
-            ],
-            "stream": {
-                "properties": []
-            },
-            "white balance": "auto",
-            "width": 160
-        }
- """
-
-""" def resetProperties(camera):
-    camera["properties"]["raw_brightness"] = 30
-    camera["properties"]["brightness"] = 0
-    camera["properties"]["raw_contrast"] = 10
-    camera["properties"]["contrast"] = 100
-    camera["properties"]["raw_saturation"] = 200
-    camera["properties"]["saturation"] = 100
-    camera["properties"]["raw_sharpness"] = 21
-    camera["properties"]["sharpness"] = 42
-    camera["properties"]["exposure_auto"] = 1
-    camera["properties"]["raw_exposure_absolute"] = 10
-    camera["properties"]["exposure_absolute"] = 15
-
-    return camera """
-    
 
 def parseError(str):
     """Report parse error."""
@@ -256,19 +144,6 @@ def readConfig():
         parseError("could not read cameras")
         return False
     for camera in cameras:
-        print(camera)
-        """ camera['properties']['raw_brightness'] = 30
-        camera['properties']['brightness'] = 0
-        camera['properties']['raw_contrast'] = 10
-        camera['properties']['contrast'] = 100
-        camera['properties']['raw_saturation'] = 200
-        camera['properties']['saturation'] = 100
-        camera['properties']['raw_sharpness'] = 21
-        camera['properties']['sharpness'] = 42
-        camera['properties']['exposure_auto'] = 1
-        camera['properties']['raw_exposure_absolute'] = 10
-        camera['properties']['exposure_absolute'] = 15
-        print(camera) """
         if not readCameraConfig(camera):
             return False
 
@@ -279,11 +154,6 @@ def startCamera(config):
     global cvSink
     global outputStream
     global outputStream2
-    # global outputStream3
-
-    # global blue
-    # global green
-    # global red
 
     print("Starting camera '{}' on {}".format(config.name, config.path))
     inst = CameraServer.getInstance()
@@ -302,11 +172,6 @@ def startCamera(config):
     # (optional) Setup a CvSource. This will send images back to the Dashboard
     outputStream = inst.putVideo("image", width, height)
     outputStream2 = inst.putVideo("image2", width, height)
-    # outputStream3 = inst.putVideo("image3", width, height)
-
-    # blue = inst.putVideo("blue", width, height)
-    # green = inst.putVideo("green", width, height)
-    # red = inst.putVideo("red", width, height)
 
     return camera
 
@@ -333,7 +198,6 @@ if __name__ == "__main__":
 
     # loop forever
     while True:
-        # time.sleep(10)
         # Tell the CvSink to grab a frame from the camera and put it
         # in the source image.  If there is an error notify the output.
         time, img = cvSink.grabFrame(img)
@@ -346,8 +210,8 @@ if __name__ == "__main__":
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)    # Convert BGR img to HSV format so that you can more easily filter on a color
 
         # define range of blue color in HSV
-        lowerGreen = np.array([50,100,100])       #lower_blue = np.array([110,50,50])      experiment with different values
-        upperGreen = np.array([70,255,250])    #upper_blue = np.array([130,255,255])    experiment with different values
+        lowerGreen = np.array([50,100,100])
+        upperGreen = np.array([70,255,250])
         
         # Threshold the HSV image to get only blue colors, based on lower_blue, upper_blue
         mask = cv.inRange(hsv, lowerGreen, upperGreen)
@@ -372,13 +236,3 @@ if __name__ == "__main__":
 
         outputStream.putFrame(img)
         outputStream2.putFrame(res)
-        # outputStream3.putFrame(hsv)
-
-        # b, g, r = cv.split(hsv)
-
-        # blue.putFrame(b)
-        # green.putFrame(g)
-        # red.putFrame(r)
-
-        
-        
