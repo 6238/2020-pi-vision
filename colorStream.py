@@ -64,12 +64,7 @@ cameras = []
 cvSink = None
 outputStream = None
 outputStream2 = None
-# outputStream3 = None
 img = np.zeros(shape=(120, 160, 3), dtype=np.uint8) # first used for bgr, then used for hsv
-
-# blue = None
-# green = None
-# red = None
 
 height = img.shape[0] 
 width = img.shape[1]
@@ -279,11 +274,6 @@ def startCamera(config):
     global cvSink
     global outputStream
     global outputStream2
-    # global outputStream3
-
-    # global blue
-    # global green
-    # global red
 
     print("Starting camera '{}' on {}".format(config.name, config.path))
     inst = CameraServer.getInstance()
@@ -302,11 +292,6 @@ def startCamera(config):
     # (optional) Setup a CvSource. This will send images back to the Dashboard
     outputStream = inst.putVideo("image", width, height)
     outputStream2 = inst.putVideo("image2", width, height)
-    # outputStream3 = inst.putVideo("image3", width, height)
-
-    # blue = inst.putVideo("blue", width, height)
-    # green = inst.putVideo("green", width, height)
-    # red = inst.putVideo("red", width, height)
 
     return camera
 
@@ -333,7 +318,6 @@ if __name__ == "__main__":
 
     # loop forever
     while True:
-        # time.sleep(10)
         # Tell the CvSink to grab a frame from the camera and put it
         # in the source image.  If there is an error notify the output.
         time, img = cvSink.grabFrame(img)
@@ -346,8 +330,8 @@ if __name__ == "__main__":
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)    # Convert BGR img to HSV format so that you can more easily filter on a color
 
         # define range of blue color in HSV
-        lowerGreen = np.array([50,100,100])       #lower_blue = np.array([110,50,50])      experiment with different values
-        upperGreen = np.array([70,255,250])    #upper_blue = np.array([130,255,255])    experiment with different values
+        lowerGreen = np.array([50,100,100])
+        upperGreen = np.array([70,255,250])
         
         # Threshold the HSV image to get only blue colors, based on lower_blue, upper_blue
         mask = cv.inRange(hsv, lowerGreen, upperGreen)
@@ -372,13 +356,3 @@ if __name__ == "__main__":
 
         outputStream.putFrame(img)
         outputStream2.putFrame(res)
-        # outputStream3.putFrame(hsv)
-
-        # b, g, r = cv.split(hsv)
-
-        # blue.putFrame(b)
-        # green.putFrame(g)
-        # red.putFrame(r)
-
-        
-        
