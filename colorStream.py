@@ -192,6 +192,8 @@ if __name__ == "__main__":
         print("Setting up NetworkTables client for team {}".format(team))
         ntinst.startClientTeam(team)
 
+    table = ntinst.getTable("SmartDashboard")
+
     # start cameras
     for config in cameraConfigs:
         cameras.append(startCamera(config))
@@ -233,6 +235,9 @@ if __name__ == "__main__":
             (x,y,w,h) = cv.boundingRect(Obj1)     # get geometric information
 
             res = cv.rectangle(res, (x,y), (x+w, y+h), (0, 0, 255), 2)
+
+            table.putNumber("x", width/2 - (x + w/2))
+            table.putNumber("y", height/2 - (y + h/2))
 
         outputStream.putFrame(img)
         outputStream2.putFrame(res)
