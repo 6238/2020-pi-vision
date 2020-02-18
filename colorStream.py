@@ -72,6 +72,10 @@ width = img.shape[1]
 centerX = int(width/2)
 centerY = int(height/2)
 
+targetW = 39.25
+targetH = 17.0
+
+
 def parseError(str):
     """Report parse error."""
     print("config error in '" + configFile + "': " + str, file=sys.stderr)
@@ -197,6 +201,10 @@ if __name__ == "__main__":
     # start cameras
     for config in cameraConfigs:
         cameras.append(startCamera(config))
+        
+    # define range of blue color in HSV
+    lowerGreen = np.array([50,100,100])
+    upperGreen = np.array([70,255,250])
 
     # loop forever
     while True:
@@ -211,33 +219,35 @@ if __name__ == "__main__":
 
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)    # Convert BGR img to HSV format so that you can more easily filter on a color
 
-        # define range of blue color in HSV
-        lowerGreen = np.array([50,100,100])
-        upperGreen = np.array([70,255,250])
-        
         # Threshold the HSV image to get only blue colors, based on lower_blue, upper_blue
         mask = cv.inRange(hsv, lowerGreen, upperGreen)
         
         # Bitwise-AND mask and original image and the blue mask to get a final result that "only" has the green colors.
-        res = cv.bitwise_and(img,img, mask= mask)
+        res = cv.bitwise_and(img, img, mask=mask)
 
-        maskcopy = mask  #make a copy of mask, some documents suggest that the contours function changes the image that is passed.
+        maskcopy = mask  # make a copy of mask, some documents suggest that the contours function changes the image that is passed.
         image, contours, hierarchy = cv.findContours(maskcopy,cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)     # Find the contours
         # cv.drawContours(res, contours, -1, (255,0,0), 2)
         
-        #Draw Cross Hairs At Center of Frame
+        # Draw Cross Hairs At Center of Frame
         res = cv.circle(res, (centerX, centerY), 10, (255,0,0), 1)  #  Draw a circle using center and radius of target
         res = cv.line(res, (centerX-10, centerY),(centerX+10, centerY), (225,0,0), 1)     # Draw a red horizontal line
         res = cv.line(res, (centerX, centerY-10), (centerX, centerY+10), (225,0,0), 1)
 
         if len(contours) > 0:  # Avoid processing null contours
-            Obj1 = max(contours, key=cv.contourArea)  #find largest area contour aka green reflective tape
+            Obj1 = max(contours, key=cv.contourArea)  # find largest area contour aka green reflective tape
             (x,y,w,h) = cv.boundingRect(Obj1)     # get geometric information
 
             res = cv.rectangle(res, (x,y), (x+w, y+h), (0, 0, 255), 2)
+            
+            z = (w**2 + h**2)**0.5
 
             table.putNumber("x", width/2 - (x + w/2))
             table.putNumber("y", height/2 - (y + h/2))
+            table.putNumber("z", z)
+            table.putNumber("w", w)
+            table.putNumber("h", h)
+        
 
         outputStream.putFrame(img)
         outputStream2.putFrame(res)
